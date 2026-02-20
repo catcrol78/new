@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Редактор песен</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <style>
+    /* Компактная админка */
+    .admin-wrap { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    .admin-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+    .admin-header h1 { margin: 0; font-size: 24px; font-weight: 500; color: #111827; }
+    .admin-toolbar { display: flex; gap: 8px; flex-wrap: wrap; }
+    .admin-btn {
+      border: 1px solid var(--border);
+      background: #fff;
+      border-radius: 30px;
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #111827;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+    .admin-btn:hover { background: #f3f4f6; }
+    .admin-btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .admin-btn-primary:hover { background: #1a5fcc; }
+    .admin-btn-warning { background: #ef4444; color: #fff; border-color: #ef4444; }
+    .admin-btn-warning:hover { background: #dc2626; }
+
+    /* Сетка формы */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 12px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 16px;
+      margin-bottom: 30px;
+      box-shadow: var(--shadow);
+    }
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .field-group label {
+      font-size: 12px;
+      font-weight: 500;
+      color: #4b5563;
+      letter-spacing: 0.3px;
+    }
+    .field-group input,
+    .field-group select,
+    .field-group textarea {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 8px 10px;
+      font-size: 13px;
+      font-family: inherit;
+      background: #f9fafb;
+      transition: 0.2s;
+    }
+    .field-group input:focus,
+    .field-group select:focus,
+    .field-group textarea:focus {
+      border-color: var(--accent);
+      outline: none;
+      background: #fff;
+    }
+    .field-group textarea { min-height: 60px; resize: vertical; }
+
+    /* Заголовки секций */
+    .section-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #1f2937;
+      margin: 0 0 8px 0;
+      padding-bottom: 4px;
+      border-bottom: 2px solid #e5e7eb;
+    }
+    .section-title i { color: var(--accent); margin-right: 6px; font-size: 14px; }
+
+    /* Чипсы (культура) */
+    .chipset {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 4px;
+    }
+    .chipset label {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      border: 1px solid var(--border);
+      border-radius: 30px;
+      padding: 4px 10px;
+      background: #fff;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .chipset input { margin: 0; }
+
+    /* Список песен (набор) */
+    .set-section {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: var(--shadow);
+    }
+    .set-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .set-header h2 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+    }
+    .set-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .set-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: #f9fafb;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .set-item:hover { background: #f3f4f6; }
+    .set-item-info {
+      flex: 1;
+    }
+    .set-item-info h4 {
+      margin: 0 0 4px 0;
+      font-size: 15px;
+      font-weight: 600;
+    }
+    .set-item-info p {
+      margin: 0;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .set-item-actions {
+      display: flex;
+      gap: 6px;
+    }
+    .set-item-actions button {
+      background: none;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 30px;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .set-item-actions button:hover {
+      background: rgba(0,0,0,0.05);
+    }
+    .btn-edit { color: var(--accent); }
+    .btn-delete { color: #ef4444; }
+
+    /* Предпросмотр YouTube */
+    .yt-preview {
+      margin-top: 6px;
+      transition: opacity 0.2s;
+    }
+    .yt-preview img {
+      max-width: 100%;
+      max-height: 90px;
+      width: auto;
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      background-color: #f0f0f0;
+      display: block;
+    }
+
+    /* Задания */
+    .task-editor {
+      background: #f9fafb;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    .task-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .task-top h4 { margin: 0; font-size: 14px; }
+    .task-remove {
+      background: none;
+      border: none;
+      color: #ef4444;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .task-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 8px;
+    }
+    .admin-field {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .admin-field label { font-size: 11px; color: #6b7280; }
+    .admin-field input,
+    .admin-field select,
+    .admin-field textarea {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 8px;
+      font-size: 12px;
+    }
+
+    /* Адаптация */
+    @media (max-width: 640px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .admin-header { flex-direction: column; align-items: stretch; }
+      .admin-toolbar { justify-content: center; }
+    }
+
+    /* Индикация ошибок */
+    .invalid { border-color: #ef4444 !important; background: #fff5f5 !important; }
+    .req-star { color: #ef4444; margin-left: 2px; }
+    .hint { color: #9ca3af; font-size: 11px; margin-left: 4px; }
+
+    /* Toast и loader (как в index) */
+    .loader {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(255,255,255,0.9);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      transition: opacity 0.3s;
+    }
+    .loader.hidden { opacity: 0; pointer-events: none; }
+    .spinner {
+      width: 50px; height: 50px;
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .scroll-top {
+      position: fixed;
+      bottom: 30px; right: 30px;
+      width: 50px; height: 50px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: white;
+      border: none;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 100;
+    }
+    .scroll-top.visible { display: flex; }
+    .toast {
+      position: fixed;
+      bottom: 30px; left: 50%;
+      transform: translateX(-50%);
+      background: #111827;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 50px;
+      font-size: 14px;
+      z-index: 1000;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <div class="loader" id="loader"><div class="spinner"></div></div>
+  <button class="scroll-top" id="scrollTop"><i class="fas fa-arrow-up"></i></button>
+  <div class="toast" id="toast"></div>
+
+  <div class="admin-wrap">
+    <!-- Шапка с кнопками -->
+    <div class="admin-header">
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <a href="./index.html" class="admin-link" style="text-decoration: none;">
+          <i class="fas fa-arrow-left"></i> Каталог
+        </a>
+        <h1><i class="fas fa-music" style="color: var(--accent);"></i> Редактор песен</h1>
+      </div>
+      <div class="admin-toolbar">
+        <button class="admin-btn" id="btnNewSong"><i class="fas fa-plus"></i> Новая</button>
+        <button class="admin-btn admin-btn-primary" id="btnSaveSong"><i class="fas fa-save"></i> Сохранить</button>
+        <button class="admin-btn" id="btnExportSetJs"><i class="fas fa-download"></i> Экспорт (songs-data.js)</button>
+        <button class="admin-btn" id="btnClear"><i class="fas fa-eraser"></i> Очистить форму</button>
+        <button class="admin-btn admin-btn-warning" id="btnClearSet"><i class="fas fa-trash-alt"></i> Очистить набор</button>
+      </div>
+    </div>
+
+    <!-- Форма редактирования (полная, компактная) -->
+    <form class="form-grid" id="songForm">
+      <!-- Скрытое поле ID -->
+      <input type="hidden" id="id" />
+
+      <!-- ===== БЛОК 1: Основное ===== -->
+      <div style="grid-column: span 2;">
+        <h4 class="section-title"><i class="fas fa-info-circle"></i> Основное</h4>
+      </div>
+
+      <div class="field-group">
+        <label>Название (ru) <span class="req-star">*</span></label>
+        <input type="text" id="titleRu" />
+      </div>
+      <div class="field-group">
+        <label>Название (es) <span class="req-star">*</span></label>
+        <input type="text" id="titleEs" />
+      </div>
+      <div class="field-group" style="grid-column: span 2;">
+        <label>Исполнитель <span class="req-star">*</span></label>
+        <input type="text" id="artist" />
+      </div>
+      <div class="field-group" style="grid-column: span 2;">
+        <label>YouTube ссылка или ID <span class="req-star">*</span></label>
+        <input type="text" id="youtubeInput" placeholder="https://... или ID" />
+        <div class="yt-preview" id="ytPreview" style="display: none;">
+          <img id="ytPreviewImg" src="" alt="YouTube preview" />
+        </div>
+      </div>
+
+      <!-- ===== БЛОК 2: Параметры ===== -->
+      <div style="grid-column: span 2; margin-top: 8px;">
+        <h4 class="section-title"><i class="fas fa-sliders-h"></i> Параметры</h4>
+      </div>
+
+      <div class="field-group">
+        <label>Уровень</label>
+        <select id="level">
+          <option value="">—</option>
+          <option>A1</option><option>A2</option><option>B1</option><option>B2</option>
+          <option>A2-B1</option><option>B1-B2</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Возраст</label>
+        <select id="age">
+          <option value="all">all</option>
+          <option value="12+">12+</option>
+          <option value="16+" selected>16+</option>
+          <option value="18+">18+</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Другой язык?</label>
+        <select id="otherLang">
+          <option value="false">нет</option>
+          <option value="true">да</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Ненормативная лексика</label>
+        <select id="profanity">
+          <option value="none">none</option>
+          <option value="mild">mild</option>
+          <option value="explicit">explicit</option>
+        </select>
+      </div>
+      <div class="field-group" style="grid-column: span 2;">
+        <label>Примечание по ограничениям</label>
+        <input type="text" id="restrNote" placeholder="например: есть французский" />
+      </div>
+
+      <!-- ===== БЛОК 3: Культура ===== -->
+      <div style="grid-column: span 2; margin-top: 8px;">
+        <h4 class="section-title"><i class="fas fa-globe"></i> Культура</h4>
+      </div>
+
+      <div class="field-group" style="grid-column: span 2;">
+        <label>Типы культуры</label>
+        <div class="chipset" id="cultureTags">
+          <label><input type="checkbox" value="holidays"> праздники</label>
+          <label><input type="checkbox" value="traditions"> традиции</label>
+          <label><input type="checkbox" value="geography"> география</label>
+          <label><input type="checkbox" value="cities"> города</label>
+          <label><input type="checkbox" value="neighborhoods"> районы</label>
+          <label><input type="checkbox" value="food"> еда</label>
+          <label><input type="checkbox" value="music"> музыка</label>
+        </div>
+      </div>
+      <div class="field-group" style="grid-column: span 2;">
+        <label>Конкретика (каждая на новой строке)</label>
+        <textarea id="cultureItems" placeholder="Malasaña&#10;La Habana" rows="2"></textarea>
+      </div>
+
+      <!-- ===== БЛОК 4: Лексика и грамматика ===== -->
+<div style="grid-column: span 2; margin-top: 8px;">
+  <h4 class="section-title"><i class="fas fa-language"></i> Лексика и грамматика</h4>
+</div>
+
+<div class="field-group" style="grid-column: span 2;">
+  <label>Лексика (по слову на строке)</label>
+  <textarea id="vocabulary" placeholder="ritmo&#10;playa" rows="3"></textarea>
+</div>
+<div class="field-group" style="grid-column: span 2;">
+  <label>Грамматика (через запятую)</label>
+  <input type="text" id="grammar" placeholder="presente, gustar, subjuntivo" />
+</div>
+<!-- НОВОЕ ПОЛЕ ДЛЯ ГРАММАТИЧЕСКИХ ПРАВИЛ -->
+<div class="field-group" style="grid-column: span 2;">
+  <label>Грамматические правила (текстовое описание)</label>
+  <textarea id="grammarRules" placeholder="Например: В этой песне используется конструкция 'me gusta' для выражения симпатий. Обратите внимание на спряжение глаголов в presente de indicativo." rows="4"></textarea>
+  <small class="hint">Подробное описание грамматических явлений, которые встречаются в песне</small>
+</div>
+
+      <!-- ===== БЛОК 5: Темы и PDF ===== -->
+      <div style="grid-column: span 2; margin-top: 8px;">
+        <h4 class="section-title"><i class="fas fa-tags"></i> Темы и материалы</h4>
+      </div>
+
+      <div class="field-group" style="grid-column: span 2;">
+        <label>Темы (через запятую)</label>
+        <input type="text" id="themes" placeholder="love, party, naturaleza" />
+      </div>
+      <div class="field-group" style="grid-column: span 2;">
+        <label>PDF ссылка</label>
+                <input type="text" id="pdfLink" placeholder="./pdf/lesson.pdf" />
+      </div>
+<div class="field-group" style="grid-column: span 2;">
+  <label>Miro ссылка</label>
+  <input type="text" id="miroLink" placeholder="https://miro.com/app/board/..." />
+</div>
+     
+      <!-- ===== БЛОК 6: Текст песни и переводы ===== -->
+      <div style="grid-column: span 2; margin-top: 8px;">
+        <h4 class="section-title"><i class="fas fa-file-alt"></i> Текст / таймкоды</h4>
+      </div>
+
+      <div class="field-group" style="grid-column: span 2;">
+        <textarea id="lyrics" placeholder="0:00 | Intro&#10;0:15 | primera estrofa..." rows="6"></textarea>
+      </div>
+
+      <!-- НОВОЕ ПОЛЕ ДЛЯ ПЕРЕВОДОВ -->
+      <div style="grid-column: span 2; margin-top: 8px;">
+        <h4 class="section-title"><i class="fas fa-language"></i> Переводы (построчно, в том же порядке, что и текст)</h4>
+      </div>
+
+      <div class="field-group" style="grid-column: span 2;">
+        <textarea id="translations" placeholder="Введите перевод для каждой строки (по одному на строку)&#10;Я бы поклялся, что не знаю, чего хочу&#10;Но я знаю, что умру..." rows="6"></textarea>
+        <small class="hint">Количество строк должно соответствовать количеству строк текста (пустые строки допускаются).</small>
+      </div>
+      
+           <!-- ===== БЛОК 7: Задания ===== -->
+      <div style="grid-column: span 2; margin-top: 8px;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <h4 class="section-title"><i class="fas fa-tasks"></i> Задания <span class="pill" id="tasksCount">0</span></h4>
+          <button class="admin-btn" id="btnAddTask" type="button"><i class="fas fa-plus-circle"></i> Добавить</button>
+        </div>
+        <div id="tasksContainer"></div>
+      </div>
+
+      <!-- ===== БЛОК 8: Живые задания (по времени) ===== -->
+      <div style="grid-column: span 2; margin-top: 16px;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <h4 class="section-title"><i class="fas fa-clock"></i> Живые задания (по времени) <span class="pill" id="liveTasksCount">0</span></h4>
+          <button class="admin-btn" id="btnAddLiveTask" type="button"><i class="fas fa-plus-circle"></i> Добавить</button>
+        </div>
+        <div id="liveTasksContainer"></div>
+      </div>
+    </form>
+    <!-- конец формы -->
+
+    <!-- Список песен (набор) -->
+    <div class="set-section">
+      <div class="set-header">
+        <h2><i class="fas fa-list"></i> Общий набор <span class="pill" id="setCount">0</span></h2>
+        <span class="hint">Кликните по песне для редактирования</span>
+      </div>
+      <div id="setList" class="set-list"></div>
+    </div>
+  </div>
+
+  <!-- Подключение скриптов -->
+ <script src="songs-data.js"></script>
+<script src="admin.js"></script>
+  <script>
+    // Убираем лоадер
+    setTimeout(() => {
+      const loader = document.getElementById('loader');
+      if (loader) {
+        loader.classList.add('hidden');
+        setTimeout(() => loader.style.display = 'none', 300);
+      }
+    }, 500);
+  </script>
+</body>
+</html>
